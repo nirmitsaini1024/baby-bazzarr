@@ -27,7 +27,7 @@ interface ShippingAddress {
 }
 
 interface Order {
-  id: string
+  orderId: string
   date: string
   expectedDelivery: string
   status: string
@@ -48,8 +48,10 @@ export default function OrderDetailsClient({ orderId }: { orderId: string }) {
   useEffect(() => {
     async function fetchOrder() {
       try {
+        console.log("Fetching order with ID:", orderId);
         // Get the order by ID
         const orderData = await getOrderById(orderId)
+        console.log("Received order data:", orderData);
         // Handle the possibility of undefined by setting to null
         setOrder(orderData || null)
       } catch (error) {
@@ -94,7 +96,7 @@ export default function OrderDetailsClient({ orderId }: { orderId: string }) {
 
   // Handle tracking via WhatsApp
   const handleTrackOrder = () => {
-    openWhatsAppTracking(order.id)
+    openWhatsAppTracking(order.orderId)
   }
 
   return (
@@ -151,7 +153,7 @@ export default function OrderDetailsClient({ orderId }: { orderId: string }) {
               </Link>
             </div>
             <h1 className="text-3xl font-bold text-[#112938]">
-              {language === "ar" ? `تفاصيل الطلب: ${order.id}` : `Order Details: ${order.id}`}
+              {language === "ar" ? `تفاصيل الطلب: ${order.orderId}` : `Order Details: ${order.orderId}`}
             </h1>
           </div>
         </section>

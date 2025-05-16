@@ -13,7 +13,7 @@ export async function getUserCart(userId: string): Promise<CartDocument | null> 
   const client = await clientPromise
   const db = client.db()
 
-  return db.collection("carts").findOne({ userId })
+  return db.collection("carts").findOne({ userId }) as Promise<CartDocument | null>
 }
 
 export async function updateUserCart(userId: string, items: CartItem[]): Promise<void> {

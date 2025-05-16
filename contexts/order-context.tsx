@@ -6,7 +6,7 @@ import { useAuth } from "@clerk/nextjs"
 import type { CartItem } from "@/contexts/cart-context"
 
 export type Order = {
-  id: string
+  orderId: string
   date: string
   status: "Processing" | "Shipped" | "Delivered" | "Cancelled"
   statusAr: string
@@ -23,7 +23,7 @@ export type Order = {
 
 type OrderContextType = {
   orders: Order[]
-  addOrder: (order: Omit<Order, "id" | "date" | "status" | "statusAr" | "expectedDelivery">) => string
+  addOrder: (order: Omit<Order, "orderId" | "date" | "status" | "statusAr" | "expectedDelivery">) => string
   getOrderById: (id: string) => Order | undefined
   isLoading: boolean
   refreshOrders: () => Promise<void> // Add this function to manually refresh orders
@@ -97,12 +97,12 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }
 
   // Add a new order (this is now just for compatibility, actual orders are added via API)
-  const addOrder = (order: Omit<Order, "id" | "date" | "status" | "statusAr" | "expectedDelivery">) => {
+  const addOrder = (order: Omit<Order, "orderId" | "date" | "status" | "statusAr" | "expectedDelivery">) => {
     const orderId = generateOrderId()
 
     const newOrder: Order = {
       ...order,
-      id: orderId,
+      orderId,
       date: new Date().toISOString().split("T")[0],
       status: "Processing",
       statusAr: "قيد المعالجة",
@@ -115,7 +115,11 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Get an order by ID
   const getOrderById = (id: string) => {
-    return orders.find((order) => order.id === id)
+    console.log("getOrderById called with ID:", id);
+    console.log("Current orders:", orders);
+    const order = orders.find((order) => order.orderId === id)
+    console.log("Found order:", order);
+    return order
   }
 
   return (
