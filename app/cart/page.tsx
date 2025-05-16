@@ -32,15 +32,69 @@ export default function CartPage() {
     postalCode: "",
   })
 
+  const [errors, setErrors] = useState({
+    fullName: "",
+    phone: "",
+    address: "",
+    postalCode: "",
+  })
+
+  const validateForm = () => {
+    const newErrors = {
+      fullName: "",
+      phone: "",
+      address: "",
+      postalCode: "",
+    }
+
+    // Validate full name (only letters and spaces)
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = language === "ar" ? "الاسم مطلوب" : "Name is required"
+    } else if (!/^[a-zA-Z\u0600-\u06FF\s]+$/.test(formData.fullName)) {
+      newErrors.fullName = language === "ar" ? "الاسم يجب أن يحتوي على أحرف فقط" : "Name should only contain letters"
+    }
+
+    // Validate phone number (Egyptian format)
+    if (!formData.phone.trim()) {
+      newErrors.phone = language === "ar" ? "رقم الهاتف مطلوب" : "Phone number is required"
+    } else if (!/^01[0125][0-9]{8}$/.test(formData.phone)) {
+      newErrors.phone = language === "ar" ? "رقم الهاتف غير صالح" : "Invalid phone number format"
+    }
+
+    // Validate address
+    if (!formData.address.trim()) {
+      newErrors.address = language === "ar" ? "العنوان مطلوب" : "Address is required"
+    } else if (formData.address.trim().length < 10) {
+      newErrors.address = language === "ar" ? "العنوان قصير جداً" : "Address is too short"
+    }
+
+    // Validate postal code (5 digits)
+    if (!formData.postalCode.trim()) {
+      newErrors.postalCode = language === "ar" ? "الرمز البريدي مطلوب" : "Postal code is required"
+    } else if (!/^\d{5}$/.test(formData.postalCode)) {
+      newErrors.postalCode = language === "ar" ? "الرمز البريدي يجب أن يكون 5 أرقام" : "Postal code must be 5 digits"
+    }
+
+    setErrors(newErrors)
+    return !Object.values(newErrors).some(error => error !== "")
+  }
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
+    // Clear error when user starts typing
+    setErrors((prev) => ({ ...prev, [name]: "" }))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (isSubmitting) return
+
+    // Validate form before submission
+    if (!validateForm()) {
+      return
+    }
 
     setIsSubmitting(true)
 
@@ -269,8 +323,11 @@ export default function CartPage() {
                               value={formData.fullName}
                               onChange={handleInputChange}
                               required
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#0CC0DF]"
+                              className={`w-full px-3 py-2 border ${errors.fullName ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-[#0CC0DF]`}
                             />
+                            {errors.fullName && (
+                              <p className="mt-1 text-sm text-red-500">{errors.fullName}</p>
+                            )}
                           </div>
 
                           <div>
@@ -281,8 +338,11 @@ export default function CartPage() {
                               value={formData.phone}
                               onChange={handleInputChange}
                               required
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#0CC0DF]"
+                              className={`w-full px-3 py-2 border ${errors.phone ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-[#0CC0DF]`}
                             />
+                            {errors.phone && (
+                              <p className="mt-1 text-sm text-red-500">{errors.phone}</p>
+                            )}
                           </div>
 
                           <div>
@@ -292,9 +352,12 @@ export default function CartPage() {
                               value={formData.address}
                               onChange={handleInputChange}
                               required
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#0CC0DF]"
+                              className={`w-full px-3 py-2 border ${errors.address ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-[#0CC0DF]`}
                               rows={3}
                             ></textarea>
+                            {errors.address && (
+                              <p className="mt-1 text-sm text-red-500">{errors.address}</p>
+                            )}
                           </div>
 
                           <div>
@@ -307,8 +370,11 @@ export default function CartPage() {
                               value={formData.postalCode}
                               onChange={handleInputChange}
                               required
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#0CC0DF]"
+                              className={`w-full px-3 py-2 border ${errors.postalCode ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-[#0CC0DF]`}
                             />
+                            {errors.postalCode && (
+                              <p className="mt-1 text-sm text-red-500">{errors.postalCode}</p>
+                            )}
                           </div>
 
                           <div className="pt-4">
