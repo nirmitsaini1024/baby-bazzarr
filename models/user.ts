@@ -4,61 +4,79 @@ import clientPromise from "@/lib/mongodb"
 export interface UserProfile {
   _id?: ObjectId
   userId: string
-  name: string        // Required field
-  email: string       // Required field (new)
-  phone?: string      // Optional field
+  name: string
+  email: string
+  imageUrl?: string
+  phone?: string
+  isActive: boolean
   createdAt: Date
   updatedAt: Date
 }
 
 export async function getUserProfile(userId: string): Promise<UserProfile | null> {
-  const client = await clientPromise
-  const db = client.db()
+  try {
+    const client = await clientPromise
+    const db = client.db()
 
-  // Add proper type casting
-  const result = await db.collection("users").findOne({ userId })
-  return result as unknown as UserProfile | null
-}
-
-export async function ensureUserProfile(
-  userId: string,
-  profileData: { name: string; email: string }
-): Promise<void> {
-  const client = await clientPromise
-  const db = client.db()
-
-  const existingProfile = await getUserProfile(userId)
-  
-  if (!existingProfile) {
-    console.log('Creating new user profile for:', userId)
-    await db.collection("users").insertOne({
-      userId,
-      ...profileData,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    })
+    const result = await db.collection("users").findOne({ userId })
+    return result as unknown as UserProfile | null
+  } catch (error) {
+    console.error('Error fetching user profile:', error)
+    throw error
   }
 }
 
 export async function updateUserProfile(
   userId: string,
-  profileData: { name: string; email: string },
+  profileData: { 
+    name: string; 
+    email: string;
+    imageUrl?: string;
+    phone?: string;
+  }
 ): Promise<void> {
-  const client = await clientPromise
-  const db = client.db()
+  try {
+    const client = await clientPromise
+    const db = client.db()
 
-  await db.collection("users").updateOne(
-    { userId },
-    {
-      $set: {
-        ...profileData,
-        updatedAt: new Date(),
+    await db.collection("users").updateOne(
+      { userId },
+      {
+        $set: {
+          ...profileData,
+          isActive: true,
+          updatedAt: new Date(),
+        },
+        $setOnInsert: {
+          userId,
+          createdAt: new Date(),
+        },
       },
-      $setOnInsert: {
-        userId,
-        createdAt: new Date(),
-      },
-    },
-    { upsert: true },
-  )
+      { upsert: true }
+    )
+  } catch (error) {
+    console.error(`Error updating user profile for ${userId}:`, error)
+    throw error
+  }
+}
+
+export async function deleteUserProfile(userId: string): Promise<void> {
+  try {
+    const client = await clientPromise
+    const db = client.db()
+
+    // Soft delete by marking as inactive instead of actually removing the record
+    await db.collection("users").updateOne(
+      { userId },
+      {
+        $set: {
+          isActive: false,
+          updatedAt: new Date()
+        }
+      }
+    )
+  } catch (error) {
+    console.error(`Error deleting user profile for ${userId}:`, error)
+    throw error
+  }
 }
