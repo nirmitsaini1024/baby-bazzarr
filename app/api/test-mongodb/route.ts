@@ -17,7 +17,7 @@ export async function GET() {
       success: false,
       error: null as string | null,
       details: null as string | null,
-      stack?: string
+      stack: null as string | null // Changed from optional to nullable
     },
     database_info: {
       name: null as string | null,
@@ -25,7 +25,7 @@ export async function GET() {
       users_collection: {
         exists: false,
         count: null as number | null,
-        sample_structure?: string[]
+        sample_structure: null as string[] | null // Changed from optional to nullable
       }
     }
   };
