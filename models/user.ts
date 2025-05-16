@@ -4,9 +4,9 @@ import clientPromise from "@/lib/mongodb"
 export interface UserProfile {
   _id?: ObjectId
   userId: string
-  email: string
-  name?: string
-  phone?: string
+  name: string        // Required field
+  email: string       // Required field (new)
+  phone?: string      // Optional field
   createdAt: Date
   updatedAt: Date
 }
@@ -15,12 +15,14 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
   const client = await clientPromise
   const db = client.db()
 
-  return db.collection("users").findOne({ userId })
+  // Add proper type casting
+  const result = await db.collection("users").findOne({ userId })
+  return result as unknown as UserProfile | null
 }
 
 export async function updateUserProfile(
   userId: string,
-  profileData: { name?: string; email?: string; phone?: string },
+  profileData: { name: string; email: string },
 ): Promise<void> {
   const client = await clientPromise
   const db = client.db()
@@ -33,6 +35,7 @@ export async function updateUserProfile(
         updatedAt: new Date(),
       },
       $setOnInsert: {
+        userId,
         createdAt: new Date(),
       },
     },

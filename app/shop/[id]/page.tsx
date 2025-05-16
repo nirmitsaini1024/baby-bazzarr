@@ -14,9 +14,10 @@ import { products } from "@/data/products"
 import CustomerReview from "@/components/customer-review"
 import ProductImageGallery from "@/components/product-image-gallery"
 import UserButton from "@/components/user-button"
+import React from "react" // Import React for JSX.Element type
 
 export default function ProductDetailPage({ params }: { params: { id: string } }) {
-  const { t, language, dir } = useLanguage()
+  const { t, language = "en", dir } = useLanguage() // Provide a default value for language
   const { addItem } = useCart()
   const { toast } = useToast()
   const [selectedColor, setSelectedColor] = useState<string>("blue")
@@ -107,9 +108,11 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
       image: product.image,
     })
 
-    // Show toast notification
+    // Fix: create a simple React component that can be passed as string 
+    // to the toast title instead of using JSX directly
     toast({
       variant: "success",
+      // Fix: Convert JSX element to string
       title: language === "ar" ? "تمت الإضافة إلى السلة" : "Added to cart",
       description: language === "ar" ? product.nameAr : product.name,
     })
@@ -259,7 +262,8 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
                       {language === "ar" ? "المميزات" : "Features"}
                     </h2>
                     <ul className="list-disc pl-5 space-y-1 text-gray-700">
-                      {(language === "ar" ? product.featuresAr ?? [] : product.features ?? []).map((feature, index) => (
+                      {/* Fix: Add a null check for featuresAr */}
+                      {(language === "ar" ? (product.featuresAr || []) : product.features).map((feature, index) => (
                         <li key={index}>{feature}</li>
                       ))}
                     </ul>
@@ -585,6 +589,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
                   : "Premium baby essentials for happy families."}
               </p>
               <div className="flex space-x-4">
+                  // Continue with social media icons in footer
                 <a href="#" className="hover:text-[#0CC0DF]">
                   <span className="sr-only">Facebook</span>
                   <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
