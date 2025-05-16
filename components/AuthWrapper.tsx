@@ -3,6 +3,7 @@
 import { useUser } from "@clerk/clerk-react";
 import { ReactNode, useEffect } from "react";
 import { syncUserData } from "@/app/actions/user-actions";
+import { usePathname } from "next/navigation";
 
 type AuthWrapperProps = {
   children: ReactNode;
@@ -14,6 +15,10 @@ type AuthWrapperProps = {
  */
 export default function AuthWrapper({ children }: AuthWrapperProps) {
   const { user, isLoaded, isSignedIn } = useUser();
+  const pathname = usePathname();
+
+  // List of public routes that don't need authentication
+  const publicRoutes = ['/sign-in', '/sign-up', '/', '/shop'];
 
   useEffect(() => {
     // Only sync when we have a signed-in user
@@ -50,8 +55,9 @@ export default function AuthWrapper({ children }: AuthWrapperProps) {
     }
   }
 
-  // You could add loading states or authentication redirects here
-  if (!isLoaded) {
+  // Only show loading state for protected routes
+  const isPublicRoute = publicRoutes.includes(pathname);
+  if (!isLoaded && !isPublicRoute) {
     return <div>Loading authentication...</div>;
   }
 
