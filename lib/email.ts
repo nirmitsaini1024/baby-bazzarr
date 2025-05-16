@@ -6,8 +6,7 @@ import { CartItem } from "@/contexts/cart-context";
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Email to send order notifications to (your email)
-const STORE_EMAIL = "nirmitsaini24@gmail.com";
-
+const STORE_EMAIL = "babybazaarofficial@gmail.com";
 // Type for shipping address
 type ShippingAddress = {
   fullName: string;
