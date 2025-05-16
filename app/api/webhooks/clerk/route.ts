@@ -2,9 +2,11 @@ import { Webhook } from 'svix'
 import { headers } from 'next/headers'
 import { WebhookEvent } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
-import { updateUserProfile } from '@/models/user'
+import { updateUserProfile, ensureUserProfile } from '@/models/user'
 
 export async function POST(req: Request) {
+  console.log('Webhook received from Clerk');
+  
   // Get the headers
   const headerPayload = await headers();
   const svix_id = headerPayload.get("svix-id");
@@ -13,6 +15,7 @@ export async function POST(req: Request) {
 
   // If there are no headers, error out
   if (!svix_id || !svix_timestamp || !svix_signature) {
+    console.error('Missing Svix headers');
     return new Response('Error occured -- no svix headers', {
       status: 400
     })
@@ -21,6 +24,7 @@ export async function POST(req: Request) {
   // Get the body
   const payload = await req.json()
   const body = JSON.stringify(payload);
+  console.log('Webhook payload:', payload);
 
   // Create a new Svix instance with your webhook secret
   const wh = new Webhook(process.env.CLERK_WEBHOOK_SECRET || '');
@@ -34,6 +38,7 @@ export async function POST(req: Request) {
       "svix-timestamp": svix_timestamp,
       "svix-signature": svix_signature,
     }) as WebhookEvent
+    console.log('Webhook verified successfully');
   } catch (err) {
     console.error('Error verifying webhook:', err);
     return new Response('Error occured', {
@@ -43,26 +48,37 @@ export async function POST(req: Request) {
 
   // Handle the webhook
   const eventType = evt.type;
+  console.log('Webhook event type:', eventType);
   
   if (eventType === 'user.created' || eventType === 'user.updated') {
     const { id, email_addresses, first_name, last_name } = evt.data;
+    console.log('User data:', { id, email_addresses, first_name, last_name });
     
     // Get the primary email
     const primaryEmail = email_addresses?.[0]?.email_address;
     
     if (!primaryEmail) {
+      console.error('No email found in webhook data');
       return new Response('No email found', { status: 400 });
     }
 
     // Combine first and last name
     const fullName = [first_name, last_name].filter(Boolean).join(' ') || 'Anonymous';
+    console.log('Processed user data:', { fullName, primaryEmail });
 
     try {
-      // Update user profile with only email and name
+      // First ensure the user profile exists
+      await ensureUserProfile(id, {
+        name: fullName,
+        email: primaryEmail
+      });
+
+      // Then update it
       await updateUserProfile(id, {
         name: fullName,
         email: primaryEmail
       });
+      console.log('User profile updated successfully');
 
       return NextResponse.json({ success: true });
     } catch (error) {

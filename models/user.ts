@@ -20,6 +20,26 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
   return result as unknown as UserProfile | null
 }
 
+export async function ensureUserProfile(
+  userId: string,
+  profileData: { name: string; email: string }
+): Promise<void> {
+  const client = await clientPromise
+  const db = client.db()
+
+  const existingProfile = await getUserProfile(userId)
+  
+  if (!existingProfile) {
+    console.log('Creating new user profile for:', userId)
+    await db.collection("users").insertOne({
+      userId,
+      ...profileData,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })
+  }
+}
+
 export async function updateUserProfile(
   userId: string,
   profileData: { name: string; email: string },
