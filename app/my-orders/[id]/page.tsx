@@ -8,44 +8,60 @@ import LanguageSwitcher from "@/components/language-switcher"
 import CartButton from "@/components/cart-button"
 import { Button } from "@/components/ui/button"
 import { openWhatsAppTracking } from "@/utils/whatsapp"
-import { useEffect, useState, use } from "react"
+import { useEffect, useState } from "react"
 
-export default function OrderDetailsPage({ params }: { params: { id: string } }) {
+// Define types for the order and order items
+interface OrderItem {
+  id: string
+  name: string
+  image?: string
+  quantity: number
+  price: number
+}
+
+interface ShippingAddress {
+  fullName: string
+  phone: string
+  address: string
+  postalCode: string
+}
+
+interface Order {
+  id: string
+  date: string
+  expectedDelivery: string
+  status: string
+  statusAr?: string
+  total: number
+  items: OrderItem[]
+  shippingAddress: ShippingAddress
+}
+
+// Client component that receives the resolved orderId
+export default function OrderDetailsClient({ orderId }: { orderId: string }) {
   const { t, language, dir } = useLanguage()
   const { getOrderById } = useOrder()
-  const [order, setOrder] = useState<any>(null)
+  const [order, setOrder] = useState<Order | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  // Resolve the params directly in the component
-  const resolvedId = params.id
 
   // Fetch the order when the component mounts
   useEffect(() => {
-    console.log("Fetching order with ID:", resolvedId)
-    
     async function fetchOrder() {
       try {
         // Get the order by ID
-        const orderData = await getOrderById(resolvedId)
-        console.log("Order data received:", orderData)
-        
-        if (orderData) {
-          setOrder(orderData)
-        } else {
-          setError("Order not found")
-          console.error("Order data is null or undefined")
-        }
+        const orderData = await getOrderById(orderId)
+        // Handle the possibility of undefined by setting to null
+        setOrder(orderData || null)
       } catch (error) {
         console.error("Error fetching order:", error)
-        setError(error instanceof Error ? error.message : 'Unknown error')
+        setOrder(null)
       } finally {
         setLoading(false)
       }
     }
 
     fetchOrder()
-  }, [resolvedId, getOrderById])
+  }, [orderId, getOrderById])
 
   // If loading, show loading state
   if (loading) {
@@ -55,7 +71,6 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
           <h1 className="text-2xl font-bold text-[#112938] mb-4">
             {language === "ar" ? "جاري التحميل..." : "Loading..."}
           </h1>
-          <p>Loading order: {resolvedId}</p>
         </div>
       </div>
     )
@@ -69,8 +84,6 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
           <h1 className="text-2xl font-bold text-[#112938] mb-4">
             {language === "ar" ? "الطلب غير موجود" : "Order Not Found"}
           </h1>
-          {error && <p className="text-red-500 mb-4">Error: {error}</p>}
-          <p className="mb-4">Order ID: {resolvedId}</p>
           <Button asChild className="bg-[#0CC0DF] hover:bg-[#0CC0DF]/90 text-white">
             <Link href="/my-orders">{language === "ar" ? "العودة إلى طلباتي" : "Back to My Orders"}</Link>
           </Button>
