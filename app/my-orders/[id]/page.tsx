@@ -152,9 +152,9 @@ export default function OrderDetailsClient({ orderId }: { orderId: string }) {
                 {language === "ar" ? "العودة إلى طلباتي" : "Back to My Orders"}
               </Link>
             </div>
-            <h1 className="text-3xl font-bold text-[#112938]">
+            {/* <h1 className="text-3xl font-bold text-[#112938]">
               {language === "ar" ? `تفاصيل الطلب: ${order.orderId}` : `Order Details: ${order.orderId}`}
-            </h1>
+            </h1> */}
           </div>
         </section>
 
