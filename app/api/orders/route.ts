@@ -136,19 +136,6 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Update user profile with the provided information
-    try {
-      // console.log("POST /api/orders - Updating user profile with shipping info");
-      await updateUserProfile(userId, {
-        name: orderData.shippingAddress.fullName,
-        phone: orderData.shippingAddress.phone,
-      });
-      // console.log("POST /api/orders - User profile updated successfully");
-    } catch (profileError) {
-      // Log but continue, don't fail the order just because profile update failed
-      console.error("POST /api/orders - Error updating user profile:", profileError);
-    }
-
     // Generate order ID
     const orderId = `ORD-${Math.floor(10000 + Math.random() * 90000)}`;
     // console.log(`POST /api/orders - Generated order ID: ${orderId}`);
