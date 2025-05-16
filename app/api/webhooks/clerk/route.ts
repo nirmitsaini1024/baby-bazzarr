@@ -4,74 +4,44 @@ import { WebhookEvent } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import clientPromise from '@/lib/mongodb'
 
-// A simplified webhook handler focused on debugging
 export async function POST(req: Request) {
-  // STEP 1: Log basic request information
-  console.log('----------------------');
-  console.log('CLERK WEBHOOK RECEIVED');
-  console.log('----------------------');
+  console.log('📣 Clerk webhook received');
   
-  // STEP 2: Check environment variables (don't log the actual values)
+  // Get the webhook secret
   const webhookSecret = process.env.CLERK_WEBHOOK_SECRET;
-  const mongoUri = process.env.MONGODB_URI;
-  
-  console.log('Environment check:');
-  console.log(`- CLERK_WEBHOOK_SECRET: ${webhookSecret ? 'Set' : 'MISSING!'}`);
-  console.log(`- MONGODB_URI: ${mongoUri ? 'Set' : 'MISSING!'}`);
-  
-  if (!webhookSecret || !mongoUri) {
-    console.error('Missing required environment variables!');
-    return new Response('Server configuration error: Missing required environment variables', {
+  if (!webhookSecret) {
+    console.error('❌ CLERK_WEBHOOK_SECRET is missing');
+    return new Response('Server configuration error', {
       status: 500
     });
   }
   
-  // STEP 3: Test MongoDB connection
-  console.log('Testing MongoDB connection...');
-  try {
-    const client = await clientPromise;
-    await client.db().command({ ping: 1 });
-    console.log('✅ MongoDB connection successful');
-  } catch (dbError) {
-    console.error('❌ MongoDB connection failed:', dbError);
-    return new Response(`Database connection error: ${dbError instanceof Error ? dbError.message : String(dbError)}`, {
-      status: 500
-    });
-  }
-  
-  // STEP 4: Process headers
+  // Get the headers
   const headersList = await headers();
   const svix_id = headersList.get("svix-id");
   const svix_timestamp = headersList.get("svix-timestamp");
   const svix_signature = headersList.get("svix-signature");
   
-  console.log('Header check:');
-  console.log(`- svix-id: ${svix_id ? 'Present' : 'MISSING!'}`);
-  console.log(`- svix-timestamp: ${svix_timestamp ? 'Present' : 'MISSING!'}`);
-  console.log(`- svix-signature: ${svix_signature ? 'Present' : 'MISSING!'}`);
-  
   if (!svix_id || !svix_timestamp || !svix_signature) {
-    console.error('Missing required Svix headers');
-    return new Response('Error occurred -- missing webhook headers', {
+    console.error('❌ Missing required Svix headers');
+    return new Response('Missing webhook headers', {
       status: 400
     });
   }
   
-  // STEP 5: Get and log the raw body
-  let rawBody;
+  // Get the body as text
+  let rawBody: string;
   try {
     rawBody = await req.text();
-    console.log('Raw body received, length:', rawBody.length);
-    // Log only the first 100 chars to avoid flooding logs
-    console.log('Body preview:', rawBody.substring(0, 100) + '...');
-  } catch (bodyError) {
-    console.error('Error reading request body:', bodyError);
+    console.log('✅ Webhook body received, length:', rawBody.length);
+  } catch (error) {
+    console.error('❌ Error reading request body:', error);
     return new Response('Error reading request body', {
       status: 400
     });
   }
   
-  // STEP 6: Verify the webhook
+  // Verify the webhook
   const wh = new Webhook(webhookSecret);
   let evt: WebhookEvent;
   
@@ -82,118 +52,140 @@ export async function POST(req: Request) {
       "svix-signature": svix_signature,
     }) as WebhookEvent;
     console.log('✅ Webhook signature verified successfully');
-  } catch (verifyError) {
-    console.error('❌ Webhook verification failed:', verifyError);
-    return new Response(`Webhook verification failed: ${verifyError instanceof Error ? verifyError.message : 'Unknown error'}`, {
+  } catch (error) {
+    console.error('❌ Webhook verification failed:', error);
+    return new Response(`Webhook verification failed: ${error instanceof Error ? error.message : 'Unknown error'}`, {
       status: 400
     });
   }
   
-  // STEP 7: Parse the body
-  let payload;
+  // Parse the body
+  let payload: any;
   try {
     payload = JSON.parse(rawBody);
-    console.log('Event type:', payload.type);
-    
-    // For user events, log key information
-    if (payload.type === 'user.created' || payload.type === 'user.updated') {
-      const { id, email_addresses } = payload.data;
-      const primaryEmail = email_addresses && email_addresses.length > 0 
-        ? email_addresses[0].email_address 
-        : 'No email found';
-        
-      console.log(`User ID: ${id || 'Missing!'}`);
-      console.log(`Primary email: ${primaryEmail}`);
-    }
-  } catch (parseError) {
-    console.error('Error parsing webhook JSON:', parseError);
+    console.log('📌 Event type:', payload.type);
+  } catch (error) {
+    console.error('❌ Error parsing webhook JSON:', error);
     return new Response('Invalid JSON payload', {
       status: 400
     });
   }
   
-  // STEP 8: Store data in MongoDB
+  // Process the webhook event
   try {
-    console.log('Attempting to store event in database...');
-    const client = await clientPromise;
-    const db = client.db();
-    
-    // Create a collection specifically for webhook logs
-    const collection = db.collection('webhook_logs');
-    
-    // Store the entire event plus metadata
-    const result = await collection.insertOne({
-      event_type: payload.type,
-      event_id: svix_id,
-      timestamp: new Date(),
-      data: payload,
-      raw_headers: {
-        'svix-id': svix_id,
-        'svix-timestamp': svix_timestamp,
-        'svix-signature': svix_signature?.substring(0, 10) + '...' // Only store part of the signature
-      }
-    });
-    
-    console.log('✅ Event stored in database:', result.insertedId);
-    
-    // If this is a user event, also try to store in users collection
     if (payload.type === 'user.created' || payload.type === 'user.updated') {
-      const { id, email_addresses, first_name, last_name, image_url } = payload.data;
+      // Extract user data
+      const { id, email_addresses, first_name, last_name, image_url, phone_numbers } = payload.data;
       
       if (!id) {
-        console.error('No user ID found in data!');
-      } else {
-        const primaryEmail = email_addresses && email_addresses.length > 0 
-          ? email_addresses[0].email_address 
-          : null;
-          
-        if (!primaryEmail) {
-          console.error('No email address found for user:', id);
-        } else {
-          // Combine name
-          const fullName = [first_name, last_name].filter(Boolean).join(' ') || 'Anonymous';
-          
-          // Try to store in users collection
-          const usersCollection = db.collection('users');
-          const userResult = await usersCollection.updateOne(
-            { userId: id },
-            {
-              $set: {
-                name: fullName,
-                email: primaryEmail,
-                imageUrl: image_url || undefined,
-                updatedAt: new Date(),
-              },
-              $setOnInsert: {
-                userId: id,
-                isActive: true,
-                createdAt: new Date(),
-              }
-            },
-            { upsert: true }
-          );
-          
-          console.log('User storage result:', {
-            acknowledged: userResult.acknowledged,
-            matchedCount: userResult.matchedCount,
-            modifiedCount: userResult.modifiedCount,
-            upsertedCount: userResult.upsertedCount,
-            upsertedId: userResult.upsertedId
-          });
-        }
+        console.error('❌ No user ID in webhook data');
+        return new Response('Missing user ID in webhook data', { status: 400 });
       }
+      
+      // Get the primary email
+      const primaryEmail = email_addresses && email_addresses.length > 0 
+        ? email_addresses[0].email_address 
+        : null;
+      
+      if (!primaryEmail) {
+        console.error('❌ No email found for user:', id);
+        return new Response('No email found in user data', { status: 400 });
+      }
+      
+      // Get phone if available
+      const primaryPhone = phone_numbers && phone_numbers.length > 0
+        ? phone_numbers[0].phone_number
+        : null;
+
+      // Combine first and last name
+      const fullName = [first_name, last_name].filter(Boolean).join(' ') || 'Anonymous';
+      
+      console.log(`📝 Processing user: ${id} (${fullName}, ${primaryEmail})`);
+      
+      // Connect to MongoDB and store user
+      const client = await clientPromise;
+      const db = client.db();
+      const usersCollection = db.collection('users');
+      
+      // Update or insert user
+      const result = await usersCollection.updateOne(
+        { userId: id },
+        {
+          $set: {
+            name: fullName,
+            email: primaryEmail,
+            phone: primaryPhone,
+            imageUrl: image_url || null,
+            isActive: true,
+            updatedAt: new Date(),
+          },
+          $setOnInsert: {
+            userId: id,
+            createdAt: new Date(),
+          }
+        },
+        { upsert: true }
+      );
+      
+      console.log('✅ User data stored in MongoDB:', {
+        matchedCount: result.matchedCount,
+        modifiedCount: result.modifiedCount,
+        upsertedCount: result.upsertedCount
+      });
+      
+      return NextResponse.json({ 
+        success: true,
+        message: `User ${payload.type === 'user.created' ? 'created' : 'updated'} successfully`,
+        userId: id
+      });
+    } 
+    else if (payload.type === 'user.deleted') {
+      const { id } = payload.data;
+      
+      if (!id) {
+        console.error('❌ No user ID in user.deleted webhook');
+        return new Response('Missing user ID in webhook data', { status: 400 });
+      }
+      
+      console.log(`🗑️ Processing user deletion: ${id}`);
+      
+      // Connect to MongoDB and mark user as deleted
+      const client = await clientPromise;
+      const db = client.db();
+      const usersCollection = db.collection('users');
+      
+      // Soft delete (mark as inactive)
+      await usersCollection.updateOne(
+        { userId: id },
+        {
+          $set: {
+            isActive: false,
+            updatedAt: new Date()
+          }
+        }
+      );
+      
+      console.log(`✅ User ${id} marked as deleted`);
+      
+      return NextResponse.json({ 
+        success: true,
+        message: 'User marked as deleted successfully',
+        userId: id
+      });
     }
-  } catch (dbError) {
-    console.error('❌ Database operation failed:', dbError);
-    // Continue processing instead of returning error
-    // This way we at least acknowledge the webhook even if storage fails
-    console.log('Continuing despite database error to acknowledge webhook');
+    else {
+      // For other event types we don't handle
+      console.log(`ℹ️ Unhandled event type: ${payload.type}`);
+      return NextResponse.json({ 
+        success: true,
+        message: `Webhook acknowledged: ${payload.type}` 
+      });
+    }
+  } catch (error) {
+    console.error(`❌ Error processing webhook:`, error);
+    return new Response(
+      `Error processing webhook: ${error instanceof Error ? error.message : 'Unknown error'}`, 
+      { status: 500 }
+    );
   }
-  
-  // STEP 9: Always acknowledge the webhook
-  console.log('Webhook processing completed');
-  return NextResponse.json({ 
-    success: true,
-    message: `Webhook processed successfully` 
-  });
 }

@@ -82,7 +82,7 @@ export async function GET() {
     
     // Include stack trace if in development
     if (process.env.NODE_ENV === 'development' && error instanceof Error) {
-      response.connection_test.stack = error.stack;
+      response.connection_test.stack = error.stack || null;
     }
   }
   
