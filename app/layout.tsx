@@ -1,5 +1,6 @@
 import type React from "react";
 import "./globals.css";
+import { Analytics } from "@vercel/analytics/next";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { LanguageProvider } from "@/contexts/language-context";
@@ -45,7 +46,7 @@ export default function RootLayout({
           <img
             height="1"
             width="1"
-            style={{ display: 'none' }}
+            style={{ display: "none" }}
             src="https://www.facebook.com/tr?id=4019137561664721&ev=PageView&noscript=1"
             alt=""
           />
@@ -59,6 +60,8 @@ export default function RootLayout({
                 <OrderProvider>
                   <CartProvider>
                     {children}
+                    <Analytics />
+
                     <Toaster />
                   </CartProvider>
                 </OrderProvider>
