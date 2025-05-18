@@ -159,11 +159,11 @@ export default function MyOrdersPage() {
             ) : (
               <div className="space-y-8">
                 {orders.map((order) => (
-                  <div key={order.id} className="bg-white rounded-lg shadow-sm overflow-hidden">
+                  <div key={order.orderId} className="bg-white rounded-lg shadow-sm overflow-hidden">
                     <div className="bg-gray-50 p-4 border-b flex flex-col sm:flex-row justify-between items-start sm:items-center">
                       <div>
                         <div className="flex items-center gap-2">
-                          <h3 className="font-medium text-[#112938]">{order.id}</h3>
+                          <h3 className="font-medium text-[#112938]">{order.orderId}</h3>
                           <span
                             className={`px-2 py-1 text-xs rounded-full ${
                               order.status === "Delivered" ? "bg-green-100 text-green-800" : "bg-blue-100 text-blue-800"
@@ -219,13 +219,13 @@ export default function MyOrdersPage() {
                       <Button
                         variant="outline"
                         className="mr-2 flex items-center gap-1"
-                        onClick={() => handleTrackOrder(order.id)}
+                        onClick={() => handleTrackOrder(order.orderId)}
                       >
                         <ExternalLink className="h-4 w-4" />
                         {language === "ar" ? "تتبع الطلب" : "Track Order"}
                       </Button>
                       <Button asChild variant="outline">
-                        <Link href={`/my-orders/${order.id}`}>
+                        <Link href={`/my-orders/${order.orderId}`}>
                           {language === "ar" ? "عرض التفاصيل" : "View Details"}
                         </Link>
                       </Button>
@@ -291,22 +291,22 @@ export default function MyOrdersPage() {
             <div>
               <h3 className="font-semibold mb-4">{t("shop")}</h3>
               <ul className="space-y-2">
-                <li>
+                <li key="new-arrivals">
                   <Link href="/shop" className="text-gray-300 hover:text-[#0CC0DF]">
                     {t("new_arrivals_footer")}
                   </Link>
                 </li>
-                <li>
+                <li key="best-sellers">
                   <Link href="/shop" className="text-gray-300 hover:text-[#0CC0DF]">
                     {t("best_sellers")}
                   </Link>
                 </li>
-                <li>
+                <li key="sale">
                   <Link href="/shop" className="text-gray-300 hover:text-[#0CC0DF]">
                     {t("sale_footer")}
                   </Link>
                 </li>
-                <li>
+                <li key="gift-cards">
                   <Link href="/shop" className="text-gray-300 hover:text-[#0CC0DF]">
                     {t("gift_cards")}
                   </Link>
@@ -316,22 +316,22 @@ export default function MyOrdersPage() {
             <div>
               <h3 className="font-semibold mb-4">{t("help")}</h3>
               <ul className="space-y-2">
-                <li>
+                <li key="customer-service">
                   <Link href="#" className="text-gray-300 hover:text-[#0CC0DF]">
                     {t("customer_service")}
                   </Link>
                 </li>
-                <li>
+                <li key="track-order">
                   <Link href="#" className="text-gray-300 hover:text-[#0CC0DF]">
                     {t("track_order")}
                   </Link>
                 </li>
-                <li>
+                <li key="returns">
                   <Link href="#" className="text-gray-300 hover:text-[#0CC0DF]">
                     {t("returns")}
                   </Link>
                 </li>
-                <li>
+                <li key="shipping">
                   <Link href="#" className="text-gray-300 hover:text-[#0CC0DF]">
                     {t("shipping")}
                   </Link>
@@ -341,22 +341,22 @@ export default function MyOrdersPage() {
             <div>
               <h3 className="font-semibold mb-4">{t("about")}</h3>
               <ul className="space-y-2">
-                <li>
+                <li key="our-story">
                   <Link href="#" className="text-gray-300 hover:text-[#0CC0DF]">
                     {t("our_story")}
                   </Link>
                 </li>
-                <li>
+                <li key="sustainability">
                   <Link href="#" className="text-gray-300 hover:text-[#0CC0DF]">
                     {t("sustainability")}
                   </Link>
                 </li>
-                <li>
+                <li key="careers">
                   <Link href="#" className="text-gray-300 hover:text-[#0CC0DF]">
                     {t("careers")}
                   </Link>
                 </li>
-                <li>
+                <li key="contact-us">
                   <Link href="#" className="text-gray-300 hover:text-[#0CC0DF]">
                     {t("contact_us")}
                   </Link>
