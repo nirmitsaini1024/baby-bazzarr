@@ -39,18 +39,17 @@ export interface OrderDocument {
 /**
  * Create a new order
  */
-export async function createOrder(orderData: Omit<Order, "_id" | "createdAt" | "updatedAt">): Promise<Order> {
+export async function createOrder(orderData: Omit<OrderDocument, "_id" | "createdAt">): Promise<string> {
   try {
     const client = await clientPromise
     const db = client.db()
     const now = new Date()
-    const newOrder: Order = {
+    const newOrder: OrderDocument = {
       ...orderData,
       createdAt: now,
-      updatedAt: now,
     }
     const result = await db.collection("orders").insertOne(newOrder)
-    return { ...newOrder, _id: result.insertedId } as Order
+    return orderData.orderId
   } catch (error) {
     console.error("Error creating order:", error)
     throw error

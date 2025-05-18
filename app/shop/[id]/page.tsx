@@ -14,16 +14,24 @@ import { products } from "@/data/products"
 import CustomerReview from "@/components/customer-review"
 import ProductImageGallery from "@/components/product-image-gallery"
 import UserButton from "@/components/user-button"
-import React from "react" // Import React for JSX.Element type
+import React from "react"
+import ReviewForm from "@/components/review-form"
+import ReviewList from "@/components/review-list"
 
-export default function ProductDetailPage({ params }: { params: { id: string } }) {
-  const { t, language = "en", dir } = useLanguage() // Provide a default value for language
+interface PageParams {
+  id: string
+}
+
+export default function ProductDetailPage({ params }: { params: PageParams }) {
+  const { t, language = "en", dir } = useLanguage()
   const { addItem } = useCart()
   const { toast } = useToast()
   const [selectedColor, setSelectedColor] = useState<string>("blue")
+  const unwrappedParams = React.use(params as any) as PageParams
+  const productId = unwrappedParams.id
 
   // Find the product by ID
-  const product = products.find((p) => p.id === params.id)
+  const product = products.find((p) => p.id === productId)
 
   if (!product) {
     return (
@@ -545,23 +553,19 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
                 {language === "ar" ? "آراء العملاء" : "Customer Reviews"}
               </h2>
 
-              <div className="grid md:grid-cols-2 gap-6 mb-8">
-                {customerReviews.map((review, index) => (
-                  <CustomerReview
-                    key={index}
-                    name={review.name}
-                    nameAr={review.nameAr}
-                    rating={review.rating}
-                    date={review.date}
-                    comment={review.comment}
-                    commentAr={review.commentAr}
-                  />
-                ))}
+              {/* Review Form for logged-in users */}
+              <div className="mb-8">
+                <ReviewForm 
+                  productId={productId} 
+                  onReviewSubmitted={() => {
+                    // Force a refresh of the review list
+                    const event = new Event('reviewSubmitted')
+                    window.dispatchEvent(event)
+                  }} 
+                />
               </div>
 
-              <div className="text-center">
-                <Button variant="outline">{language === "ar" ? "عرض جميع التقييمات" : "View All Reviews"}</Button>
-              </div>
+              {/* Review List - Removed */}
             </div>
           </div>
         </section>
@@ -589,7 +593,6 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
                   : "Premium baby essentials for happy families."}
               </p>
               <div className="flex space-x-4">
-                  // Continue with social media icons in footer
                 <a href="#" className="hover:text-[#0CC0DF]">
                   <span className="sr-only">Facebook</span>
                   <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">

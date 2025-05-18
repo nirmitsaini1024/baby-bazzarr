@@ -24,7 +24,7 @@ export type Order = {
 type OrderContextType = {
   orders: Order[]
   addOrder: (order: Omit<Order, "orderId" | "date" | "status" | "statusAr" | "expectedDelivery">) => string
-  getOrderById: (id: string) => Order | undefined
+  getOrderById: (id: string) => Promise<Order | undefined>
   isLoading: boolean
   refreshOrders: () => Promise<void> // Add this function to manually refresh orders
 }
@@ -60,7 +60,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       // Transform the API response to match our Order type
       const transformedOrders = data.orders.map((order: any) => ({
-        id: order.orderId,
+        orderId: order.orderId,
         date: order.date,
         status: order.status,
         statusAr: order.statusAr,
@@ -114,12 +114,37 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }
 
   // Get an order by ID
-  const getOrderById = (id: string) => {
+  const getOrderById = async (id: string): Promise<Order | undefined> => {
     console.log("getOrderById called with ID:", id);
     console.log("Current orders:", orders);
-    const order = orders.find((order) => order.orderId === id)
+    
+    // First try to find the order in the local state
+    let order = orders.find((order) => order.orderId === id);
+    
+    // If not found in local state, try to fetch from API
+    if (!order) {
+      try {
+        console.log("Order not found in local state, fetching from API");
+        const response = await fetch(`/api/orders/${id}`);
+        if (!response.ok) {
+          console.error("Failed to fetch order from API:", response.status);
+          return undefined;
+        }
+        const data = await response.json();
+        order = data.order;
+        
+        // If we found the order, add it to the local state
+        if (order) {
+          setOrders(prevOrders => [...prevOrders, order as Order]);
+        }
+      } catch (error) {
+        console.error("Error fetching order from API:", error);
+        return undefined;
+      }
+    }
+    
     console.log("Found order:", order);
-    return order
+    return order;
   }
 
   return (
