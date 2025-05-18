@@ -1,6 +1,21 @@
-import type { ObjectId } from "mongodb"
+import { ObjectId } from "mongodb"
 import clientPromise from "@/lib/mongodb"
 import type { CartItem } from "@/contexts/cart-context"
+
+export interface OrderItem {
+  productId: string
+  quantity: number
+  price: number
+}
+
+export interface Order {
+  _id?: ObjectId
+  userId: string // Clerk userId
+  items: OrderItem[]
+  status: "Processing" | "Shipped" | "Delivered" | "Cancelled"
+  createdAt: Date
+  updatedAt: Date
+}
 
 export interface OrderDocument {
   _id?: ObjectId
@@ -21,28 +36,76 @@ export interface OrderDocument {
   createdAt: Date
 }
 
-export async function createOrder(orderData: Omit<OrderDocument, "_id" | "createdAt">): Promise<string> {
-  const client = await clientPromise
-  const db = client.db()
-
-  const result = await db.collection("orders").insertOne({
-    ...orderData,
-    createdAt: new Date(),
-  })
-
-  return orderData.orderId
+/**
+ * Create a new order
+ */
+export async function createOrder(orderData: Omit<Order, "_id" | "createdAt" | "updatedAt">): Promise<Order> {
+  try {
+    const client = await clientPromise
+    const db = client.db()
+    const now = new Date()
+    const newOrder: Order = {
+      ...orderData,
+      createdAt: now,
+      updatedAt: now,
+    }
+    const result = await db.collection("orders").insertOne(newOrder)
+    return { ...newOrder, _id: result.insertedId } as Order
+  } catch (error) {
+    console.error("Error creating order:", error)
+    throw error
+  }
 }
 
-export async function getUserOrders(userId: string): Promise<OrderDocument[]> {
-  const client = await clientPromise
-  const db = client.db()
+/**
+ * Get all orders (admin only)
+ */
+export async function getAllOrders(): Promise<Order[]> {
+  try {
+    const client = await clientPromise
+    const db = client.db()
+    const orders = await db.collection("orders").find({}).sort({ createdAt: -1 }).toArray()
+    return orders as Order[]
+  } catch (error) {
+    console.error("Error fetching all orders:", error)
+    throw error
+  }
+}
 
-  return db.collection("orders").find({ userId }).sort({ createdAt: -1 }).toArray()
+/**
+ * Get orders for a specific user
+ */
+export async function getUserOrders(userId: string): Promise<OrderDocument[]> {
+  try {
+    const client = await clientPromise
+    const db = client.db()
+    const orders = await db.collection("orders").find({ userId }).sort({ createdAt: -1 }).toArray()
+    return orders as OrderDocument[]
+  } catch (error) {
+    console.error(`Error fetching orders for user ${userId}:`, error)
+    throw error
+  }
+}
+
+/**
+ * Update order status (admin only)
+ */
+export async function updateOrderStatus(orderId: string, status: Order["status"]): Promise<void> {
+  try {
+    const client = await clientPromise
+    const db = client.db()
+    await db.collection("orders").updateOne(
+      { _id: new ObjectId(orderId) },
+      { $set: { status, updatedAt: new Date() } }
+    )
+  } catch (error) {
+    console.error(`Error updating order status for ${orderId}:`, error)
+    throw error
+  }
 }
 
 export async function getOrderById(orderId: string): Promise<OrderDocument | null> {
   const client = await clientPromise
   const db = client.db()
-
-  return db.collection("orders").findOne({ orderId })
+  return db.collection("orders").findOne({ orderId }) as Promise<OrderDocument | null>
 }
