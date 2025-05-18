@@ -4,7 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 import { createOrder, getUserOrders } from "@/models/order";
 import { clearUserCart } from "@/models/cart";
 import { updateUserProfile } from "@/models/user";
-import { sendOrderNotification } from "@/lib/email";
+import { sendOrderNotification, sendUserOrderConfirmation } from "@/lib/email";
 
 // Define interfaces to match your database types
 interface OrderDocument {
@@ -172,25 +172,35 @@ export async function POST(req: NextRequest) {
       newOrderId = await createOrder(orderToCreate);
       // console.log(`POST /api/orders - Order created successfully with ID: ${newOrderId}`);
       
-      // Send email notification about the new order
+      // Send email notifications
       try {
-        // console.log("POST /api/orders - Sending order notification email");
-        const emailResult = await sendOrderNotification(
+        // Send notification to store
+        const storeEmailResult = await sendOrderNotification(
           orderId,
           orderData.items,
           orderData.total,
           orderData.shippingAddress
         );
         
-        if (emailResult.success) {
-          // console.log("POST /api/orders - Order notification email sent successfully");
-        } else {
-          console.error("POST /api/orders - Failed to send order notification email:", emailResult.error);
-          // Continue with order processing even if email fails
+        if (!storeEmailResult.success) {
+          console.error("Failed to send store notification email:", storeEmailResult.error);
+        }
+
+        // Send confirmation to user
+        const userEmailResult = await sendUserOrderConfirmation(
+          orderData.email, // Make sure to include email in the order data
+          orderId,
+          orderData.items,
+          orderData.total,
+          orderData.shippingAddress
+        );
+
+        if (!userEmailResult.success) {
+          console.error("Failed to send user confirmation email:", userEmailResult.error);
         }
       } catch (emailError) {
-        console.error("POST /api/orders - Error sending order notification email:", emailError);
-        // Continue with order processing even if email fails
+        console.error("Error sending emails:", emailError);
+        // Continue with order processing even if emails fail
       }
     } catch (createOrderError) {
       console.error("POST /api/orders - Error creating order in database:", createOrderError);

@@ -3,7 +3,7 @@
 import type React from "react";
 import { createContext, useContext, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@clerk/nextjs";
+import { useAuth, useUser } from "@clerk/nextjs";
 import { useToast } from "@/hooks/use-toast";
 import { useOrder } from "@/contexts/order-context"; // Import the order context
 
@@ -46,6 +46,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const { userId, isSignedIn } = useAuth();
+  const { user } = useUser();
   const { toast } = useToast();
   const { refreshOrders } = useOrder(); // Use the refreshOrders function from OrderContext
 
@@ -200,6 +201,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
           items: [...items],
           total: total,
           shippingAddress,
+          email: user?.primaryEmailAddress?.emailAddress, // Include user's email
         }),
       });
 
