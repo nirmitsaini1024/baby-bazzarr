@@ -20,18 +20,18 @@ export default function LanguageSwitcher() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="sm" className="flex items-center gap-1 text-white">
           <Globe className="h-4 w-4" />
-          <span className="hidden md:inline">{language === "en" ? "English" : "العربية"}</span>
+          <span className="hidden md:inline">{language === "ar" ? "العربية" : "English"}</span>
           <ChevronDown className="h-3 w-3 opacity-50" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-40">
-        <DropdownMenuItem className="flex items-center justify-between" onClick={() => handleLanguageChange("en")}>
-          <span>English</span>
-          {language === "en" && <Check className="h-4 w-4" />}
-        </DropdownMenuItem>
         <DropdownMenuItem className="flex items-center justify-between" onClick={() => handleLanguageChange("ar")}>
           <span>العربية</span>
           {language === "ar" && <Check className="h-4 w-4" />}
+        </DropdownMenuItem>
+        <DropdownMenuItem className="flex items-center justify-between" onClick={() => handleLanguageChange("en")}>
+          <span>English</span>
+          {language === "en" && <Check className="h-4 w-4" />}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

@@ -190,8 +190,8 @@ type LanguageContextType = {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined)
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [language, setLanguage] = useState<Language>("en")
-  const [dir, setDir] = useState<string>("ltr")
+  const [language, setLanguage] = useState<Language>("ar")
+  const [dir, setDir] = useState<string>("rtl")
 
   useEffect(() => {
     // Set the direction based on the language
