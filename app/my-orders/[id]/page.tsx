@@ -1,11 +1,12 @@
 import OrderDetailsClient from "./order-details-client"
 
 interface PageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
-export default function OrderDetailsPage({ params }: PageProps) {
-  return <OrderDetailsClient orderId={params.id} />
+export default async function OrderDetailsPage({ params }: PageProps) {
+  const resolvedParams = await params
+  return <OrderDetailsClient orderId={resolvedParams.id} />
 }

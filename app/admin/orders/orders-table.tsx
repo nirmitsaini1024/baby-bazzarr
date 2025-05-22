@@ -23,22 +23,18 @@ function OrderDetailsRow({ order }: { order: any }) {
           </div>
           <div>
             <h4 className="font-semibold mb-2 text-purple-700">Order Items</h4>
-            <ul className="divide-y divide-gray-200">
-              {order.items?.map((item: any) => (
-                <li key={item.id || item.productId} className="py-2 flex items-center gap-3">
-                  {item.image && (
-                    <img src={item.image} alt={item.name} className="w-10 h-10 rounded object-cover border" />
-                  )}
-                  <div className="flex-1">
-                    <div className="font-medium">{item.name}</div>
-                    <div className="text-xs text-gray-500">Qty: {item.quantity}</div>
+            <div className="text-sm text-gray-700">
+              {order.items?.map((item: any, index: number) => (
+                <div key={index} className="mb-2">
+                  <div className="font-medium">{item.name}</div>
+                  <div className="text-gray-500">
+                    Quantity: {item.quantity} × {item.price.toFixed(2)} EGP
                   </div>
-                  <div className="text-sm font-semibold text-purple-700">${item.price}</div>
-                </li>
+                  <div className="text-purple-600 font-medium">
+                    Subtotal: {(item.price * item.quantity).toFixed(2)} EGP
+                  </div>
+                </div>
               ))}
-            </ul>
-            <div className="mt-2 text-right text-sm font-bold text-purple-800">
-              Total: ${order.total || order.items?.reduce((sum: number, i: any) => sum + i.price * i.quantity, 0)}
             </div>
           </div>
         </div>
@@ -88,7 +84,7 @@ export function OrdersTable({ orders, orderStatuses, statusColors, updateOrderSt
         {orders.map((order) => [
           <TableRow key={order._id?.toString()} className="hover:bg-purple-50 transition-colors">
             <TableCell className="font-medium text-purple-700">
-              {order.orderId ? `${order.orderId}` : order._id?.toString()}
+              {order.orderId}
             </TableCell>
             <TableCell className="font-medium">{order.userName}</TableCell>
             <TableCell className="hidden md:table-cell truncate max-w-[150px] text-gray-500 text-sm">
@@ -96,7 +92,7 @@ export function OrdersTable({ orders, orderStatuses, statusColors, updateOrderSt
             </TableCell>
             <TableCell>
               <form action={updateOrderStatusAction} className="flex items-center gap-2">
-                <input type="hidden" name="orderId" value={order._id?.toString()} />
+                <input type="hidden" name="orderId" value={order.orderId} />
                 <div className="flex items-center gap-2">
                   <Badge
                     className={statusColors[order.status] || "bg-gray-100"}
@@ -122,7 +118,7 @@ export function OrdersTable({ orders, orderStatuses, statusColors, updateOrderSt
                 </div>
               </form>
             </TableCell>
-            <TableCell className="hidden md:table-cell text-gray-500 text-sm">
+            <TableCell className="hidden md:table-cell text-sm text-gray-500">
               {new Date(order.createdAt).toLocaleString()}
             </TableCell>
             <TableCell>

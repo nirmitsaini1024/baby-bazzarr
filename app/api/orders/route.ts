@@ -11,6 +11,7 @@ interface OrderDocument {
   _id?: string;
   orderId: string;
   userId: string;
+  userEmail: string;
   items: Array<{
     id: string;
     name: string;
@@ -160,6 +161,7 @@ export async function POST(req: NextRequest) {
       const orderToCreate: Omit<OrderDocument, "_id" | "createdAt"> = {
         orderId,
         userId,
+        userEmail: orderData.email,
         items: orderData.items,
         total: orderData.total,
         status: "Processing",

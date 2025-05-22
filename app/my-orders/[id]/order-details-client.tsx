@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { Menu, Search, User, Heart, ArrowLeft, Truck, MessageCircle } from "lucide-react"
+import { Menu, Search, User, Heart, ArrowLeft, Truck, MessageCircle, ExternalLink } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 import { useOrder } from "@/contexts/order-context"
 import LanguageSwitcher from "@/components/language-switcher"
@@ -10,6 +10,11 @@ import CartButton from "@/components/cart-button"
 import { Button } from "@/components/ui/button"
 import { openWhatsAppTracking } from "@/utils/whatsapp"
 import { useEffect, useState } from "react"
+import { CancelOrderDialog } from "@/components/cancel-order-dialog"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
+import { Package, MapPin } from "lucide-react"
 
 // Define types for the order and order items
 interface OrderItem {
@@ -41,7 +46,7 @@ interface Order {
 // Client component that receives the resolved orderId
 export default function OrderDetailsClient({ orderId }: { orderId: string }) {
   const { t, language, dir } = useLanguage()
-  const { getOrderById } = useOrder()
+  const { getOrderById, refreshOrders } = useOrder()
   const [order, setOrder] = useState<Order | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -98,6 +103,21 @@ export default function OrderDetailsClient({ orderId }: { orderId: string }) {
   // Handle tracking via WhatsApp
   const handleTrackOrder = () => {
     openWhatsAppTracking(order.orderId)
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "Processing":
+        return "bg-amber-100 text-amber-800"
+      case "Shipped":
+        return "bg-blue-100 text-blue-800"
+      case "Delivered":
+        return "bg-green-100 text-green-800"
+      case "Cancelled":
+        return "bg-red-100 text-red-800"
+      default:
+        return "bg-gray-100 text-gray-800"
+    }
   }
 
   return (
@@ -159,120 +179,128 @@ export default function OrderDetailsClient({ orderId }: { orderId: string }) {
         {/* Order Details */}
         <section className="py-8">
           <div className="container mx-auto px-4">
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-8">
+            <div className="grid gap-6">
               {/* Order Summary */}
-              <div className="bg-gray-50 p-6 border-b">
-                <div className="flex flex-col md:flex-row justify-between">
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <h2 className="text-xl font-semibold text-[#112938]">
-                        {language === "ar" ? "ملخص الطلب" : "Order Summary"}
-                      </h2>
-                      <span
-                        className={`px-2 py-1 text-xs rounded-full ${
-                          order.status === "Delivered" ? "bg-green-100 text-green-800" : "bg-blue-100 text-blue-800"
-                        }`}
-                      >
-                        {language === "ar" ? order.statusAr : order.status}
-                      </span>
+              <Card className="shadow-md border-t-4 border-purple-500">
+                <CardHeader className="pb-3 bg-gradient-to-r from-purple-50 to-indigo-50">
+                  <CardTitle className="flex items-center gap-2 text-purple-700">
+                    <Package className="h-5 w-5" />
+                    {language === "ar" ? "ملخص الطلب" : "Order Summary"}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="grid gap-4">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-medium text-[#112938]">{order.orderId}</h3>
+                          <Badge className={getStatusColor(order.status)}>
+                            {language === "ar" ? order.statusAr : order.status}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-gray-500 mt-1">
+                          {language === "ar" ? "تاريخ الطلب:" : "Order Date:"} {order.date}
+                        </p>
+                      </div>
+                      {order.status !== "Cancelled" && (
+                        <div className="mt-2 sm:mt-0">
+                          <p className="text-sm text-gray-500">
+                            {language === "ar" ? "التوصيل المتوقع:" : "Expected Delivery:"} {order.expectedDelivery}
+                          </p>
+                          <p className="font-bold text-[#112938] mt-1" dir="ltr">
+                            {language === "ar" ? "الإجمالي:" : "Total:"} {order.total.toFixed(2)}{" "}
+                            {language === "ar" ? "ج.م" : "EGP"}
+                          </p>
+                        </div>
+                      )}
+                      {order.status === "Cancelled" && (
+                        <div className="mt-2 sm:mt-0">
+                          <p className="font-bold text-[#112938]" dir="ltr">
+                            {language === "ar" ? "الإجمالي:" : "Total:"} {order.total.toFixed(2)}{" "}
+                            {language === "ar" ? "ج.م" : "EGP"}
+                          </p>
+                        </div>
+                      )}
                     </div>
-                    <p className="text-gray-600">
-                      {language === "ar" ? "تاريخ الطلب:" : "Order Date:"} {order.date}
-                    </p>
-                    <p className="text-gray-600">
-                      {language === "ar" ? "التوصيل المتوقع:" : "Expected Delivery:"} {order.expectedDelivery}
-                    </p>
-                  </div>
-                  <div className="mt-4 md:mt-0">
-                    <div className="flex flex-col items-start md:items-end">
-                      <p className="text-gray-600">{language === "ar" ? "إجمالي الطلب:" : "Order Total:"}</p>
-                      <p className="text-2xl font-bold text-[#112938]" dir="ltr">
-                        {order.total.toFixed(2)} {language === "ar" ? "ج.م" : "EGP"}
-                      </p>
+
+                    {/* Action Buttons */}
+                    <div className="flex flex-wrap gap-2 mt-4">
+                      {order.status !== "Cancelled" && (
+                        <>
+                          <Button
+                            asChild
+                            className="bg-purple-600 hover:bg-purple-700 text-white"
+                          >
+                            <Link href={`/track-order/${order.orderId}`}>
+                              <Truck className="h-4 w-4 mr-2" />
+                              {language === "ar" ? "تتبع الطلب" : "Track Order"}
+                            </Link>
+                          </Button>
+                          <CancelOrderDialog orderId={order.orderId} onSuccess={refreshOrders} />
+                        </>
+                      )}
                     </div>
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
 
               {/* Order Items */}
-              <div className="p-6">
-                <h3 className="text-lg font-semibold text-[#112938] mb-4">
-                  {language === "ar" ? "المنتجات" : "Products"}
-                </h3>
-                <div className="space-y-6">
-                  {order.items.map((item) => (
-                    <div key={item.id} className="flex flex-col sm:flex-row border-b pb-6 last:border-0 last:pb-0">
-                      <div className="w-full sm:w-24 h-24 relative flex-shrink-0 mb-4 sm:mb-0">
-                        <Image
-                          src={item.image || "/placeholder.svg"}
-                          alt={item.name}
-                          fill
-                          className="object-cover rounded"
-                        />
-                      </div>
-                      <div className="sm:ml-6 flex-1">
-                        <div className="flex flex-col sm:flex-row justify-between">
-                          <div>
-                            <Link href={`/shop/${item.id}`} className="font-medium text-[#112938] hover:text-[#0CC0DF]">
-                              {item.name}
-                            </Link>
-                            <p className="text-gray-600 mt-1">
-                              {language === "ar" ? "الكمية:" : "Quantity:"} {item.quantity}
-                            </p>
-                          </div>
-                          <div className="mt-2 sm:mt-0 text-right">
-                            <p className="text-gray-600">{language === "ar" ? "سعر الوحدة:" : "Unit Price:"}</p>
-                            <p className="font-medium" dir="ltr">
-                              {item.price.toFixed(2)} {language === "ar" ? "ج.م" : "EGP"}
-                            </p>
-                            <p className="font-bold mt-1" dir="ltr">
-                              {language === "ar" ? "الإجمالي:" : "Total:"} {(item.price * item.quantity).toFixed(2)}{" "}
-                              {language === "ar" ? "ج.م" : "EGP"}
-                            </p>
-                          </div>
+              <Card className="shadow-md">
+                <CardHeader className="pb-3 bg-gradient-to-r from-purple-50 to-indigo-50">
+                  <CardTitle className="flex items-center gap-2 text-purple-700">
+                    <Package className="h-5 w-5" />
+                    {language === "ar" ? "المنتجات" : "Order Items"}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="space-y-4">
+                    {order.items.map((item) => (
+                      <div key={item.id} className="flex items-start gap-4">
+                        <div className="relative w-20 h-20 rounded-lg overflow-hidden border">
+                          <Image
+                            src={item.image || "/placeholder.svg"}
+                            alt={item.name}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-medium text-[#112938]">{item.name}</h4>
+                          <p className="text-sm text-gray-500">
+                            {language === "ar" ? "الكمية:" : "Quantity:"} {item.quantity}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            {language === "ar" ? "السعر:" : "Price:"} {item.price.toFixed(2)}{" "}
+                            {language === "ar" ? "ج.م" : "EGP"}
+                          </p>
+                          <p className="font-medium text-purple-700">
+                            {language === "ar" ? "المجموع:" : "Subtotal:"} {(item.price * item.quantity).toFixed(2)}{" "}
+                            {language === "ar" ? "ج.م" : "EGP"}
+                          </p>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
 
               {/* Shipping Address */}
-              <div className="p-6 bg-gray-50 border-t">
-                <h3 className="text-lg font-semibold text-[#112938] mb-4">
-                  {language === "ar" ? "عنوان الشحن" : "Shipping Address"}
-                </h3>
-                <div className="bg-white p-4 rounded border">
-                  <p className="font-medium">{order.shippingAddress.fullName}</p>
-                  <p className="text-gray-600 mt-1">{order.shippingAddress.phone}</p>
-                  <p className="text-gray-600 mt-1">{order.shippingAddress.address}</p>
-                  <p className="text-gray-600 mt-1">
-                    {language === "ar" ? "الرمز البريدي:" : "Postal Code:"} {order.shippingAddress.postalCode}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Track Order */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h3 className="text-lg font-semibold text-[#112938] mb-4">
-                {language === "ar" ? "تتبع الطلب" : "Track Order"}
-              </h3>
-              <div className="flex flex-col items-center text-center p-4 bg-gray-50 rounded-lg">
-                <Truck className="h-12 w-12 text-[#0CC0DF] mb-4" />
-                <p className="text-gray-600 mb-6">
-                  {language === "ar"
-                    ? "تواصل معنا عبر واتساب للحصول على تحديثات حول طلبك"
-                    : "Contact us via WhatsApp for updates about your order"}
-                </p>
-                <Button
-                  onClick={handleTrackOrder}
-                  className="bg-[#25D366] hover:bg-[#128C7E] text-white flex items-center gap-2"
-                >
-                  <MessageCircle className="h-5 w-5" />
-                  {language === "ar" ? "تتبع عبر واتساب" : "Track via WhatsApp"}
-                </Button>
-              </div>
+              <Card className="shadow-md">
+                <CardHeader className="pb-3 bg-gradient-to-r from-purple-50 to-indigo-50">
+                  <CardTitle className="flex items-center gap-2 text-purple-700">
+                    <MapPin className="h-5 w-5" />
+                    {language === "ar" ? "عنوان التوصيل" : "Shipping Address"}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="space-y-2">
+                    <p className="font-medium">{order.shippingAddress.fullName}</p>
+                    <p className="text-gray-600">{order.shippingAddress.address}</p>
+                    <p className="text-gray-600">{order.shippingAddress.postalCode}</p>
+                    <p className="text-gray-600">{order.shippingAddress.phone}</p>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </section>

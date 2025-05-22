@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import { openWhatsAppTracking } from "@/utils/whatsapp"
 import UserButton from "@/components/user-button"
 import { useAuth } from "@clerk/nextjs"
+import { CancelOrderDialog } from "@/components/cancel-order-dialog"
 
 export default function MyOrdersPage() {
   const { t, language, dir } = useLanguage()
@@ -224,11 +225,14 @@ export default function MyOrdersPage() {
                         <ExternalLink className="h-4 w-4" />
                         {language === "ar" ? "تتبع الطلب" : "Track Order"}
                       </Button>
-                      <Button asChild variant="outline">
+                      <Button asChild variant="outline" className="mr-2">
                         <Link href={`/my-orders/${order.orderId}`}>
                           {language === "ar" ? "عرض التفاصيل" : "View Details"}
                         </Link>
                       </Button>
+                      {order.status !== "Cancelled" && (
+                        <CancelOrderDialog orderId={order.orderId} />
+                      )}
                     </div>
                   </div>
                 ))}

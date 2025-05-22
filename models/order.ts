@@ -21,6 +21,7 @@ export interface OrderDocument {
   _id?: ObjectId
   orderId: string
   userId: string
+  userEmail: string
   items: CartItem[]
   total: number
   status: "Processing" | "Shipped" | "Delivered" | "Cancelled"
@@ -94,7 +95,7 @@ export async function updateOrderStatus(orderId: string, status: Order["status"]
     const client = await clientPromise
     const db = client.db()
     await db.collection("orders").updateOne(
-      { _id: new ObjectId(orderId) },
+      { orderId },
       { $set: { status, updatedAt: new Date() } }
     )
   } catch (error) {
