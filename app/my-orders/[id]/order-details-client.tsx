@@ -224,8 +224,8 @@ export default function OrderDetailsClient({ orderId }: { orderId: string }) {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex flex-wrap gap-2 mt-4">
-                      {order.status !== "Cancelled" && (
+                    <div className="flex flex-wrap gap-2">
+                      {order.status !== "Cancelled" && order.status !== "Delivered" && (
                         <>
                           <Button
                             asChild

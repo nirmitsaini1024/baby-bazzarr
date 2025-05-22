@@ -217,21 +217,30 @@ export default function MyOrdersPage() {
                       ))}
                     </div>
                     <div className="bg-gray-50 p-4 flex justify-end">
-                      <Button
-                        variant="outline"
-                        className="mr-2 flex items-center gap-1"
-                        onClick={() => handleTrackOrder(order.orderId)}
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                        {language === "ar" ? "تتبع الطلب" : "Track Order"}
-                      </Button>
-                      <Button asChild variant="outline" className="mr-2">
-                        <Link href={`/my-orders/${order.orderId}`}>
-                          {language === "ar" ? "عرض التفاصيل" : "View Details"}
-                        </Link>
-                      </Button>
-                      {order.status !== "Cancelled" && (
-                        <CancelOrderDialog orderId={order.orderId} />
+                      {order.status !== "Cancelled" && order.status !== "Delivered" && (
+                        <>
+                          <Button
+                            variant="outline"
+                            className="mr-2 flex items-center gap-1"
+                            onClick={() => handleTrackOrder(order.orderId)}
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                            {language === "ar" ? "تتبع الطلب" : "Track Order"}
+                          </Button>
+                          <Button asChild variant="outline" className="mr-2">
+                            <Link href={`/my-orders/${order.orderId}`}>
+                              {language === "ar" ? "عرض التفاصيل" : "View Details"}
+                            </Link>
+                          </Button>
+                          <CancelOrderDialog orderId={order.orderId} />
+                        </>
+                      )}
+                      {order.status === "Delivered" && (
+                        <Button asChild variant="outline" className="mr-2">
+                          <Link href={`/my-orders/${order.orderId}`}>
+                            {language === "ar" ? "عرض التفاصيل" : "View Details"}
+                          </Link>
+                        </Button>
                       )}
                     </div>
                   </div>

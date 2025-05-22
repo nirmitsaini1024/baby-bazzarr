@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useLanguage } from "@/contexts/language-context"
 import { useOrder } from "@/contexts/order-context"
+import { useAuth } from "@clerk/nextjs"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -24,19 +25,33 @@ interface CancelOrderDialogProps {
 export function CancelOrderDialog({ orderId, onSuccess }: CancelOrderDialogProps) {
   const { language } = useLanguage()
   const { refreshOrders } = useOrder()
+  const { userId } = useAuth()
   const [open, setOpen] = useState(false)
   const [reason, setReason] = useState("")
   const [isLoading, setIsLoading] = useState(false)
 
   const handleCancel = async () => {
+    if (!userId) {
+      toast({
+        title: language === "ar" ? "خطأ" : "Error",
+        description: language === "ar" ? "يجب تسجيل الدخول لإلغاء الطلب" : "You must be logged in to cancel an order",
+        variant: "destructive",
+      })
+      return
+    }
+
     try {
       setIsLoading(true)
       const response = await fetch(`/api/orders/${orderId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
+          "x-user-id": userId,
         },
-        body: JSON.stringify({ reason }),
+        body: JSON.stringify({ 
+          status: "Cancelled",
+          reason 
+        }),
       })
 
       if (!response.ok) {
